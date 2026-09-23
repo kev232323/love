@@ -1,0 +1,82 @@
+:root {
+  --bg-main: #fdf3f7;
+  --bg-soft: #f9e7f2;
+  --paper: #fffafc;
+  --rose-deep: #8C0F55;
+  --rose-pink: #F27CBD;
+  --rose-soft: #FFB5DE;
+  --rose-cream: #FFC9E7;
+  --ink: #3d1f2d;
+  --muted: #7c5670;
+}
+
+body {
+  background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg-main) 100%);
+}
+
+.page-shell {
+  padding: 28px 14px 56px;
+}
+
+.hero {
+  padding-top: 6px;
+}
+
+.hero h1,
+.page-header h1 {
+  font-size: clamp(2.2rem, 12vw, 3.1rem);
+  letter-spacing: -0.04em;
+}
+
+.intro {
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.portal-grid,
+.photo-grid {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.portal-card,
+.polaroid {
+  border-radius: 18px;
+}
+
+.portal-card img,
+.polaroid img {
+  height: 260px;
+}
+
+.nav {
+  gap: 10px;
+}
+
+.nav a {
+  padding: 9px 12px;
+  font-size: 0.75rem;
+}
+
+.portal-content {
+  padding: 18px 14px 18px;
+}
+
+.portal-content h2 {
+  font-size: 1.5rem;
+}
+
+.caption-box {
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  padding: 10px 12px;
+}
+
+.caption-box p {
+  font-size: 0.85rem;
+}
+
+.card-1, .card-2, .card-3, .card-4, .card-5, .card-6, .card-7, .card-8, .card-9 {
+  transform: none;
+}

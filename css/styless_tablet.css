@@ -1,0 +1,42 @@
+:root {
+  --bg-main: #fdf3f7;
+  --bg-soft: #f9e7f2;
+  --paper: #fffafc;
+  --rose-deep: #8C0F55;
+  --rose-pink: #F27CBD;
+  --rose-soft: #FFB5DE;
+  --rose-cream: #FFC9E7;
+  --ink: #3d1f2d;
+  --muted: #7c5670;
+}
+
+.page-shell {
+  max-width: 900px;
+  padding: 42px 18px 70px;
+}
+
+.portal-grid,
+.photo-grid {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 24px 20px;
+}
+
+.hero h1,
+.page-header h1 {
+  font-size: clamp(2.4rem, 6vw, 4rem);
+}
+
+.portal-card img,
+.polaroid img {
+  height: 280px;
+}
+
+.nav a {
+  padding: 10px 14px;
+}
+
+.caption-box {
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+}
