@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Árbol del Tiempo</title>
+    <link rel="stylesheet" href="../css/styles_desktop.css" />
+    <link rel="stylesheet" media="(max-width: 767px)" href="../css/styles_smartphone.css" />
+    <link rel="stylesheet" media="(min-width: 768px) and (max-width: 1023px)" href="../css/styless_tablet.css" />
+    <style>
+      .tree-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 6px 0 10px;
+        text-align: center;
+      }
+
+      /* El menú ocupa el hueco que dejaba el título de la portada */
+      .page-header .nav {
+        margin: 0;
+      }
+
+      .tree-title {
+        margin: 0 0 8px;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--rose-deep);
+        font-size: clamp(1.9rem, 4.4vw, 3.2rem);
+        letter-spacing: -0.05em;
+      }
+
+      .tree-subtitle {
+        max-width: 680px;
+        margin: 0 0 22px;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.7;
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      /* El árbol es el protagonista: ocupa todo el ancho y alto posible */
+      .tree-frame {
+        position: relative;
+        width: 100%;
+        max-width: 1040px;
+        margin: 18px auto 0;
+        filter: drop-shadow(0 26px 36px rgba(140, 15, 85, 0.14));
+      }
+
+      .tree-canvas {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+      }
+
+      /* El SVG se ajusta a la pantalla para que el árbol entero siempre se vea */
+      .tree-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: min(100vh, 1000px);
+        /* Sin overflow visible: el suelo del dibujo no debe tapar el texto de abajo */
+        overflow: hidden;
+      }
+
+      .tree-noscript {
+        margin: 0;
+        color: var(--muted);
+        font-family: Georgia, "Times New Roman", serif;
+        line-height: 1.8;
+      }
+
+      /* El árbol se mece suavemente */
+      .tree-sway {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: tree-sway 12s ease-in-out infinite;
+      }
+
+      @keyframes tree-sway {
+        0%,
+        100% {
+          transform: rotate(-0.7deg);
+        }
+        50% {
+          transform: rotate(0.7deg);
+        }
+      }
+
+      /* Cada hoja y cada flor brotan al abrir la página */
+      .leaf,
+      .blossom {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: leaf-sprout 1.1s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+      }
+
+      @keyframes leaf-sprout {
+        from {
+          opacity: 0;
+          transform: scale(0.15) rotate(-25deg);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+        }
+      }
+
+      /* La hoja de hoy brilla */
+      .leaf--today {
+        animation:
+          leaf-sprout 1.1s cubic-bezier(0.2, 0.9, 0.3, 1.25) both,
+          leaf-glow 3.4s ease-in-out 1.2s infinite;
+      }
+
+      @keyframes leaf-glow {
+        0%,
+        100% {
+          filter: drop-shadow(0 0 2px rgba(255, 206, 114, 0.55));
+        }
+        50% {
+          filter: drop-shadow(0 0 9px rgba(255, 190, 90, 0.95));
+        }
+      }
+
+      /* Luciérnagas entre las ramas */
+      .firefly {
+        animation: firefly-float 9s ease-in-out infinite;
+      }
+
+      @keyframes firefly-float {
+        0%,
+        100% {
+          transform: translate(0, 0);
+          opacity: 0.25;
+        }
+        50% {
+          transform: translate(7px, -14px);
+          opacity: 0.95;
+        }
+      }
+
+      /* Contadores de tiempo: días, semanas, meses y años juntos */
+      .tree-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        width: 100%;
+        max-width: 760px;
+        margin: 4px auto 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .tree-stat {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 110px;
+        padding: 18px 10px 16px;
+        text-align: center;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 235, 245, 0.92));
+        border: 1px solid rgba(140, 15, 85, 0.12);
+        border-radius: 20px;
+        box-shadow: 0 16px 30px rgba(140, 15, 85, 0.1);
+      }
+
+      .tree-stat::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--rose-deep), var(--rose-pink));
+        opacity: 0.8;
+      }
+
+      .tree-stat strong {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.6rem, 3.6vw, 2.4rem);
+        line-height: 1;
+        letter-spacing: -0.04em;
+        color: var(--rose-deep);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .tree-stat span {
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      /* Los días juntos se llevan el protagonismo */
+      .tree-stat--days {
+        background: linear-gradient(180deg, var(--rose-deep), var(--rose-pink));
+        border-color: rgba(140, 15, 85, 0.35);
+        box-shadow: 0 18px 34px rgba(140, 15, 85, 0.28);
+      }
+
+      .tree-stat--days::before {
+        background: rgba(255, 255, 255, 0.65);
+      }
+
+      .tree-stat--days strong,
+      .tree-stat--days span {
+        color: #fff;
+      }
+
+      /* Desglose exacto: años, meses y días */
+      .tree-calendar {
+        max-width: 700px;
+        margin: 22px auto 0;
+        padding: 16px 22px;
+        background: rgba(255, 255, 255, 0.66);
+        border: 1px dashed rgba(140, 15, 85, 0.28);
+        border-radius: 18px;
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.02rem;
+        line-height: 1.8;
+      }
+
+      .tree-stage,
+      .tree-meta {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1rem;
+        line-height: 1.8;
+      }
+
+      .tree-stage strong,
+      .tree-meta strong {
+        color: var(--rose-deep);
+      }
+
+      .tree-legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px 22px;
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 0.85rem;
+      }
+
+      .legend-dot {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        margin-right: 7px;
+        border-radius: 999px;
+        vertical-align: -1px;
+      }
+
+      .legend-leaf {
+        background: linear-gradient(135deg, #5fae6d, #2f6b41);
+      }
+
+      .legend-blossom {
+        background: radial-gradient(circle at 38% 32%, #ffe3f2, #f27cbd);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .tree-sway,
+        .leaf,
+        .blossom,
+        .leaf--today,
+        .firefly {
+          animation: none;
+        }
+      }
+
+      /* Tablets: contadores en una fila y un árbol que llena la pantalla */
+      @media (min-width: 768px) and (max-width: 1023px) {
+        .tree-stats {
+          gap: 12px;
+          max-width: 700px;
+        }
+
+        .tree-stat {
+          min-height: 96px;
+          padding: 14px 8px 12px;
+        }
+
+        .tree-stat strong {
+          font-size: clamp(1.5rem, 4.4vw, 2.1rem);
+        }
+
+        .tree-frame {
+          max-width: 100%;
+        }
+
+        .tree-svg {
+          max-height: min(76vh, 780px);
+        }
+        }
+      }
+
+      /* Celulares: contadores en dos columnas y el árbol entero en pantalla */
+      @media (max-width: 767px) {
+        .tree-title {
+          font-size: clamp(1.75rem, 8vw, 2.4rem);
+        }
+
+        .tree-subtitle {
+          margin-bottom: 18px;
+          font-size: 0.98rem;
+          line-height: 1.65;
+        }
+
+        .tree-stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .tree-stat {
+          min-height: 86px;
+          padding: 14px 8px 12px;
+          border-radius: 16px;
+        }
+
+        .tree-stat span {
+          font-size: 0.62rem;
+          letter-spacing: 0.1em;
+        }
+
+        .tree-calendar {
+          margin-top: 16px;
+          padding: 14px 15px;
+          font-size: 0.92rem;
+          line-height: 1.7;
+        }
+
+        .tree-frame {
+          max-width: 100%;
+          margin-top: 14px;
+        }
+
+        .tree-svg {
+          max-height: 64vh;
+        }
+
+        .tree-stage,
+        .tree-meta {
+          margin-top: 14px;
+          font-size: 0.92rem;
+          line-height: 1.7;
+        }
+
+        .tree-legend {
+          gap: 4px 14px;
+          font-size: 0.78rem;
+        }
+
+        .legend-dot {
+          width: 9px;
+          height: 9px;
+          margin-right: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="page-header">
+        <nav class="nav" aria-label="Navegación de recuerdos">
+          <a href="index.html">Inicio</a>
+          <a href="momentos.html">Momentos</a>
+          <a href="lugares.html">Lugares</a>
+          <a href="sentimientos.html">Sentimientos</a>
+          <a class="nav-tree" href="nuestra_recuerdos.html" aria-current="page">Nuestra Historia</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="tree-container" aria-labelledby="treeTitle">
+          <h1 class="tree-title" id="treeTitle">Árbol del Tiempo</h1>
+          <p class="tree-subtitle">
+            Cada día juntos hace crecer una rama y brotar una hoja nueva; cada semana
+            florece una flor. Este es nuestro árbol, y nunca deja de crecer.
+          </p>
+
+          <ul class="tree-stats">
+            <li class="tree-stat tree-stat--days">
+              <strong id="daysCount">0</strong>
+              <span>Días juntos</span>
+            </li>
+            <li class="tree-stat">
+              <strong id="weeksCount">0</strong>
+              <span>Semanas</span>
+            </li>
+            <li class="tree-stat">
+              <strong id="monthsCount">0</strong>
+              <span>Meses</span>
+            </li>
+            <li class="tree-stat">
+              <strong id="yearsCount">0</strong>
+              <span>Años</span>
+            </li>
+          </ul>
+
+          <p class="tree-calendar" id="calendarText">Desde el 23 de febrero de 2023</p>
+
+          <div class="tree-frame">
+            <div class="tree-canvas" id="treeCanvas">
+              <noscript>
+                <p class="tree-noscript">
+                  Activa JavaScript para ver nuestro árbol crecer día a día.
+                </p>
+              </noscript>
+            </div>
+          </div>
+
+          <p class="tree-stage">Etapa del árbol: <strong id="stageLabel">brotando…</strong></p>
+          <p class="tree-meta">
+            Hoy brota <strong>una hoja nueva</strong> · próximo brote en
+            <strong id="nextSprout">00:00:00</strong>
+          </p>
+
+          <p class="tree-legend">
+            <span><span class="legend-dot legend-leaf"></span>Una hoja por cada día juntos</span>
+            <span><span class="legend-dot legend-blossom"></span>Una flor por cada semana</span>
+          </p>
+        </section>
+      </main>
+    </div>
+    <script>
+      (() => {
+        "use strict";
+
+        const SVG_NS = "http://www.w3.org/2000/svg";
+        // 23 de febrero de 2023 (en JavaScript el mes 1 es febrero)
+        const START_DATE = { year: 2023, month: 1, day: 23 };
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const GROUND_Y = 700;
+        const CENTER_X = 410;
+        const MAX_LEAVES = 2500;
+        const MAX_BLOSSOMS = 300;
+        const ANIMATED_LEAVES = 60;
+        const ANIMATED_BLOSSOMS = 14;
+        const GROWTH_SEED = 23022023;
+
+        const BARK_COLORS = ["#6b4630", "#7a5238", "#5c3b27", "#845c3d"];
+        const LEAF_COLORS = ["#3f7d4f", "#4f9a5f", "#2f6b41", "#5fae6d", "#35744a", "#49905a"];
+
+        const startMidnight = new Date(START_DATE.year, START_DATE.month, START_DATE.day);
+
+        // Días completos transcurridos desde el 23/02/2023
+        const daysTogether = (reference) => {
+          const now = reference || new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return Math.max(0, Math.round((today - startMidnight) / DAY_MS));
+        };
+
+        // Desglose en años, meses y días de calendario
+        const calendarBreakdown = (reference) => {
+          const now = reference || new Date();
+          let years = now.getFullYear() - START_DATE.year;
+          let months = now.getMonth() - START_DATE.month;
+          let days = now.getDate() - START_DATE.day;
+          if (days < 0) {
+            months -= 1;
+            days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+          }
+          if (months < 0) {
+            years -= 1;
+            months += 12;
+          }
+          return {
+            years: Math.max(0, years),
+            months: Math.max(0, months),
+            days: Math.max(0, days)
+          };
+        };
+
+        // Azar con semilla: el árbol mantiene siempre la misma forma
+        const seededRandom = (seed) => {
+          let state = seed >>> 0;
+          return () => {
+            state = (state + 0x6d2b79f5) >>> 0;
+            let t = Math.imul(state ^ (state >>> 15), 1 | state);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        };
+
+        // Cuantos más días, más alto, más grueso y más ramificado
+        const growthProfile = (days) => {
+          const eased = 1 - Math.exp(-days / 420);
+          return {
+            trunkHeight: 66 + 220 * eased,
+            trunkWidth: 10 + 26 * eased,
+            depth: days < 7 ? 1 : days < 45 ? 2 : days < 150 ? 3 : days < 400 ? 4 : days < 900 ? 5 : days < 1500 ? 6 : 7,
+            // Con el tiempo cada rama tiende a abrir una tercera ramita
+            threeChance: Math.min(0.45, 0.1 + days / 8000),
+            leafSize: 2.3 + 1.6 * eased,
+            leafSpread: 12 + 20 * eased,
+            blossomSize: 3.2 + 1.6 * eased
+          };
+        };
+
+        const growthStage = (days) => {
+          if (days < 7) return "semilla despertando";
+          if (days < 45) return "retoño";
+          if (days < 150) return "árbol joven";
+          if (days < 400) return "árbol fuerte";
+          if (days < 900) return "árbol frondoso";
+          return "árbol del tiempo";
+        };
+
+        const svgNode = (name, attrs, parent) => {
+          const node = document.createElementNS(SVG_NS, name);
+          if (attrs) {
+            Object.keys(attrs).forEach((key) => {
+              const value = attrs[key];
+              if (value !== null && value !== undefined) {
+                node.setAttribute(key, value);
+              }
+            });
+          }
+          if (parent) {
+            parent.appendChild(node);
+          }
+          return node;
+        };
+
+        // Rama en forma de trapecio: gruesa en la base y fina en la punta
+        const taperedPath = (segment, baseScale, tipScale) => {
+          const dx = segment.x2 - segment.x1;
+          const dy = segment.y2 - segment.y1;
+          const length = Math.hypot(dx, dy) || 1;
+          const nx = -dy / length;
+          const ny = dx / length;
+          const baseHalf = (segment.width * baseScale) / 2;
+          const tipHalf = Math.max(0.7, (segment.width * tipScale) / 2);
+          const ax = segment.x1 + nx * baseHalf;
+          const ay = segment.y1 + ny * baseHalf;
+          const bx = segment.x1 - nx * baseHalf;
+          const by = segment.y1 - ny * baseHalf;
+          const cx = segment.x2 - nx * tipHalf;
+          const cy = segment.y2 - ny * tipHalf;
+          const dx2 = segment.x2 + nx * tipHalf;
+          const dy2 = segment.y2 + ny * tipHalf;
+          return `M ${ax.toFixed(2)} ${ay.toFixed(2)} L ${dx2.toFixed(2)} ${dy2.toFixed(2)} L ${cx.toFixed(2)} ${cy.toFixed(2)} L ${bx.toFixed(2)} ${by.toFixed(2)} Z`;
+        };
+
+        // Tronco: se ensancha en la base (raíces) y se afina al subir
+        const trunkPath = (profile) => {
+          const top = GROUND_Y - profile.trunkHeight;
+          const baseHalf = profile.trunkWidth * 1.3;
+          const topHalf = profile.trunkWidth * 0.32;
+          const shoulder = GROUND_Y - profile.trunkHeight * 0.34;
+          const neck = GROUND_Y - profile.trunkHeight * 0.72;
+          return [
+            `M ${(CENTER_X - baseHalf).toFixed(2)} ${GROUND_Y}`,
+            `C ${(CENTER_X - baseHalf * 0.7).toFixed(2)} ${shoulder.toFixed(2)}`,
+            ` ${(CENTER_X - topHalf * 1.2).toFixed(2)} ${neck.toFixed(2)}`,
+            ` ${(CENTER_X - topHalf).toFixed(2)} ${top.toFixed(2)}`,
+            `L ${(CENTER_X + topHalf).toFixed(2)} ${top.toFixed(2)}`,
+            `C ${(CENTER_X + topHalf * 1.2).toFixed(2)} ${neck.toFixed(2)}`,
+            ` ${(CENTER_X + baseHalf * 0.7).toFixed(2)} ${shoulder.toFixed(2)}`,
+            ` ${(CENTER_X + baseHalf).toFixed(2)} ${GROUND_Y}`,
+            "Z"
+          ].join(" ");
+        };
+
+        // Esqueleto del árbol: tronco + ramas + puntas donde nacen hojas y flores
+        const buildSkeleton = (profile) => {
+          const random = seededRandom(GROWTH_SEED);
+          const segments = [];
+          const tips = [];
+          const stack = [{
+            x: CENTER_X,
+            y: GROUND_Y,
+            angle: -90,
+            length: profile.trunkHeight * 0.98,
+            width: profile.trunkWidth,
+            depth: 0,
+            trunk: true
+          }];
+
+          while (stack.length) {
+            const branch = stack.pop();
+            const radians = (branch.angle * Math.PI) / 180;
+            const endX = branch.x + Math.cos(radians) * branch.length;
+            const endY = branch.y + Math.sin(radians) * branch.length;
+
+            segments.push({
+              x1: branch.x,
+              y1: branch.y,
+              x2: endX,
+              y2: endY,
+              width: branch.width,
+              depth: branch.depth,
+              trunk: branch.trunk,
+              shade: BARK_COLORS[Math.floor(random() * BARK_COLORS.length)]
+            });
+
+            if (branch.depth >= profile.depth - 1) {
+              // Las puntas (y las ramas del penúltimo nivel) sostienen las hojas
+              tips.push({ x: endX, y: endY });
+            }
+
+            if (branch.depth >= profile.depth) {
+              continue;
+            }
+
+            const children = branch.depth === 0 ? 2 : random() < profile.threeChance ? 3 : 2;
+            const spread = Math.max(14, 34 - branch.depth * 3);
+            for (let index = 0; index < children; index += 1) {
+              const slot = children === 2 ? (index === 0 ? -1 : 1) : index - 1;
+              const jitter = (random() - 0.5) * 12;
+              let angle = branch.angle + slot * spread + jitter;
+              // Las ramas siempre buscan un poco el cielo
+              angle += (-90 - angle) * 0.22;
+              stack.push({
+                x: endX,
+                y: endY,
+                angle,
+                length: branch.length * (branch.depth === 0 ? 0.74 : 0.6 + random() * 0.09),
+                width: Math.max(1.2, branch.width * 0.66),
+                depth: branch.depth + 1,
+                trunk: false
+              });
+            }
+          }
+
+          return { segments, tips };
+        };
+
+        // Una hoja nueva por cada día juntos
+        const buildLeaves = (tips, days, profile) => {
+          const leaves = [];
+          if (!tips.length) return leaves;
+          const random = seededRandom(770231);
+          const total = Math.min(days + 1, MAX_LEAVES);
+          for (let index = 0; index < total; index += 1) {
+            const tip = tips[index % tips.length];
+            const round = Math.floor(index / tips.length);
+            const angle = random() * Math.PI * 2;
+            const spread = 0.2 + Math.sqrt(random()) * Math.min(1.35, 0.45 + round * 0.08);
+            const radius = profile.leafSpread * spread;
+            leaves.push({
+              x: tip.x + Math.cos(angle) * radius,
+              y: tip.y + Math.sin(angle) * radius * 0.72 - Math.min(7, round * 0.8),
+              r: profile.leafSize * (0.7 + random() * 0.6),
+              color: LEAF_COLORS[Math.floor(random() * LEAF_COLORS.length)]
+            });
+          }
+          return leaves;
+        };
+
+        // Una flor nueva por cada semana juntos
+        const buildBlossoms = (tips, days, profile) => {
+          const blossoms = [];
+          if (!tips.length) return blossoms;
+          const random = seededRandom(14021993);
+          const total = Math.min(Math.floor(days / 7) + 1, MAX_BLOSSOMS);
+          for (let index = 0; index < total; index += 1) {
+            const tip = tips[(index * 3 + 1) % tips.length];
+            const round = Math.floor(index / tips.length);
+            const angle = random() * Math.PI * 2;
+            const radius = profile.leafSpread * (0.12 + random() * Math.min(1.2, 0.4 + round * 0.08));
+            blossoms.push({
+              x: tip.x + Math.cos(angle) * radius,
+              y: tip.y + Math.sin(angle) * radius * 0.7 - Math.min(9, round * 0.9),
+              r: profile.blossomSize * (0.8 + random() * 0.5)
+            });
+          }
+          return blossoms;
+        };
+
+        // Dibuja una hoja; las más recientes nacen con animación
+        const drawLeaf = (parent, leaf, index, animated, delay, isToday) => {
+          const rotation = (index * 37) % 180;
+          const rx = leaf.r.toFixed(2);
+          const ry = (leaf.r * 0.72).toFixed(2);
+          if (!animated) {
+            svgNode("ellipse", {
+              cx: leaf.x.toFixed(2),
+              cy: leaf.y.toFixed(2),
+              rx,
+              ry,
+              transform: `rotate(${rotation} ${leaf.x.toFixed(2)} ${leaf.y.toFixed(2)})`,
+              fill: leaf.color,
+              opacity: "0.93"
+            }, parent);
+            return;
+          }
+          const group = svgNode("g", {
+            transform: `translate(${leaf.x.toFixed(2)} ${leaf.y.toFixed(2)}) rotate(${rotation})`
+          }, parent);
+          svgNode("ellipse", {
+            rx,
+            ry,
+            fill: leaf.color,
+            opacity: "0.95",
+            class: isToday ? "leaf leaf--today" : "leaf",
+            style: `animation-delay:${delay.toFixed(2)}s`
+          }, group);
+        };
+
+        // Dibuja una flor de cuatro pétalos
+        const drawBlossom = (parent, blossom, animated, delay) => {
+          const r = blossom.r.toFixed(2);
+          const petals = (host) => {
+            for (let petal = 0; petal < 4; petal += 1) {
+              svgNode("ellipse", {
+                rx: r,
+                ry: (blossom.r * 0.6).toFixed(2),
+                transform: `rotate(${petal * 45})`,
+                fill: "url(#treeBlossom)",
+                opacity: "0.95"
+              }, host);
+            }
+            svgNode("circle", { r: (blossom.r * 0.4).toFixed(2), fill: "#ffe2a8" }, host);
+          };
+
+          if (!animated) {
+            const group = svgNode("g", {
+              transform: `translate(${blossom.x.toFixed(2)} ${blossom.y.toFixed(2)})`
+            }, parent);
+            petals(group);
+            return;
+          }
+
+          const group = svgNode("g", {
+            transform: `translate(${blossom.x.toFixed(2)} ${blossom.y.toFixed(2)})`
+          }, parent);
+          const animatedGroup = svgNode("g", {
+            class: "blossom",
+            style: `animation-delay:${delay.toFixed(2)}s`
+          }, group);
+          petals(animatedGroup);
+        };
+
+        // Matas de hierba al pie del tronco
+        const drawGrass = (parent, x, y, scale, color) => {
+          [-1, 0, 1].forEach((blade) => {
+            const lean = blade * 8 * scale;
+            svgNode("path", {
+              d: `M ${x.toFixed(1)} ${y.toFixed(1)} q ${(lean * 0.4).toFixed(1)} ${(-9 * scale).toFixed(1)} ${lean.toFixed(1)} ${(-16 * scale).toFixed(1)}`,
+              stroke: color,
+              "stroke-width": (2.3 * scale).toFixed(2),
+              "stroke-linecap": "round",
+              fill: "none"
+            }, parent);
+          });
+        };
+
+        // Construye todo el árbol para el número de días indicado
+        const buildTree = (days) => {
+          const profile = growthProfile(days);
+          const skeleton = buildSkeleton(profile);
+          const leaves = buildLeaves(skeleton.tips, days, profile);
+          const blossoms = buildBlossoms(skeleton.tips, days, profile);
+
+          // Límites reales del árbol: encuadran el lienzo y lo hacen crecer
+          let minX = CENTER_X - profile.trunkWidth * 1.4;
+          let maxX = CENTER_X + profile.trunkWidth * 1.4;
+          let minY = GROUND_Y - profile.trunkHeight;
+          const extend = (x, y, pad) => {
+            if (x - pad < minX) minX = x - pad;
+            if (x + pad > maxX) maxX = x + pad;
+            if (y - pad < minY) minY = y - pad;
+          };
+          skeleton.segments.forEach((segment) => extend(segment.x2, segment.y2, segment.width));
+          leaves.forEach((leaf) => extend(leaf.x, leaf.y, leaf.r + 2));
+          blossoms.forEach((blossom) => extend(blossom.x, blossom.y, blossom.r + 2));
+
+          const padding = 40;
+          const bottom = GROUND_Y + 34;
+          const viewWidth = Math.max(330, maxX - minX + padding * 2);
+          const viewHeight = Math.max(250, bottom - minY + padding * 2);
+          const viewLeft = (minX + maxX) / 2 - viewWidth / 2;
+          const viewTop = bottom + padding - viewHeight;
+
+          const canvas = document.getElementById("treeCanvas");
+          if (!canvas) return;
+          while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+
+          const svg = svgNode("svg", {
+            class: "tree-svg",
+            viewBox: `${viewLeft.toFixed(1)} ${viewTop.toFixed(1)} ${viewWidth.toFixed(1)} ${viewHeight.toFixed(1)}`,
+            preserveAspectRatio: "xMidYMax meet",
+            role: "img",
+            "aria-label": `Árbol del tiempo con ${leaves.length} hojas y ${blossoms.length} flores, una hoja por cada día juntos desde el 23 de febrero de 2023`
+          }, canvas);
+
+          const defs = svgNode("defs", null, svg);
+
+          const halo = svgNode("radialGradient", { id: "treeHalo" }, defs);
+          svgNode("stop", { offset: "0%", "stop-color": "#ffe1f0", "stop-opacity": "0.9" }, halo);
+          svgNode("stop", { offset: "100%", "stop-color": "#ffe1f0", "stop-opacity": "0" }, halo);
+
+          const soil = svgNode("linearGradient", { id: "treeSoil", x1: "0", y1: "0", x2: "0", y2: "1" }, defs);
+          svgNode("stop", { offset: "0%", "stop-color": "#e8f1e2" }, soil);
+          svgNode("stop", { offset: "100%", "stop-color": "#b9d2b7" }, soil);
+
+          const bark = svgNode("linearGradient", { id: "treeBark", x1: "0", y1: "0", x2: "1", y2: "0" }, defs);
+          svgNode("stop", { offset: "0%", "stop-color": "#452b1a" }, bark);
+          svgNode("stop", { offset: "35%", "stop-color": "#8a6242" }, bark);
+          svgNode("stop", { offset: "70%", "stop-color": "#6b4630" }, bark);
+          svgNode("stop", { offset: "100%", "stop-color": "#38220f" }, bark);
+
+          const blossom = svgNode("radialGradient", { id: "treeBlossom", cx: "42%", cy: "38%", r: "65%" }, defs);
+          svgNode("stop", { offset: "0%", "stop-color": "#ffe6f3" }, blossom);
+          svgNode("stop", { offset: "100%", "stop-color": "#f27cbd" }, blossom);
+
+          const glow = svgNode("filter", { id: "treeGlow", x: "-70%", y: "-70%", width: "240%", height: "240%" }, defs);
+          svgNode("feGaussianBlur", { stdDeviation: "5" }, glow);
+
+          // Resplandor de fondo
+          svgNode("ellipse", {
+            cx: CENTER_X,
+            cy: (minY + GROUND_Y) / 2,
+            rx: Math.max(viewWidth * 0.42, 190),
+            ry: Math.max((GROUND_Y - minY) * 0.55, 120),
+            fill: "url(#treeHalo)"
+          }, svg);
+
+          // Suelo
+          svgNode("path", {
+            d: `M ${viewLeft.toFixed(1)} ${(GROUND_Y + 16).toFixed(1)} Q ${CENTER_X} ${(GROUND_Y - 18).toFixed(1)} ${(viewLeft + viewWidth).toFixed(1)} ${(GROUND_Y + 18).toFixed(1)} L ${(viewLeft + viewWidth).toFixed(1)} ${(viewTop + viewHeight).toFixed(1)} L ${viewLeft.toFixed(1)} ${(viewTop + viewHeight).toFixed(1)} Z`,
+            fill: "url(#treeSoil)"
+          }, svg);
+
+          // Sombra del árbol sobre la tierra
+          svgNode("ellipse", {
+            cx: CENTER_X,
+            cy: GROUND_Y + 6,
+            rx: profile.trunkWidth * 3.4,
+            ry: 15,
+            fill: "rgba(74, 47, 29, 0.22)",
+            filter: "url(#treeGlow)"
+          }, svg);
+
+          // El árbol entero, meciéndose suavemente
+          const tree = svgNode("g", { class: "tree-sway" }, svg);
+
+          // Raíces que abrazan la tierra
+          [
+            { angle: 168, length: profile.trunkWidth * 2.6, width: profile.trunkWidth * 0.55 },
+            { angle: 192, length: profile.trunkWidth * 2.6, width: profile.trunkWidth * 0.55 },
+            { angle: 147, length: profile.trunkWidth * 1.9, width: profile.trunkWidth * 0.42 },
+            { angle: 213, length: profile.trunkWidth * 1.9, width: profile.trunkWidth * 0.42 }
+          ].forEach((root) => {
+            const radians = (root.angle * Math.PI) / 180;
+            svgNode("path", {
+              d: taperedPath({
+                x1: CENTER_X,
+                y1: GROUND_Y - profile.trunkWidth * 0.2,
+                x2: CENTER_X + Math.cos(radians) * root.length,
+                y2: GROUND_Y + Math.sin(radians) * root.length * 0.5,
+                width: root.width
+              }, 1.4, 0.3),
+              fill: "#4a3220"
+            }, tree);
+          });
+
+          // Tronco
+          svgNode("path", { d: trunkPath(profile), fill: "url(#treeBark)" }, tree);
+
+          // Ramas
+          skeleton.segments.forEach((segment) => {
+            if (segment.trunk) return;
+            svgNode("path", {
+              d: taperedPath(segment, 1, 0.66),
+              fill: segment.shade
+            }, tree);
+          });
+
+          // Copa: hojas y flores
+          const crown = svgNode("g", null, tree);
+          const lite = liteMotion();
+          const animatedLeaves = lite ? 26 : ANIMATED_LEAVES;
+          const animatedBlossoms = lite ? 8 : ANIMATED_BLOSSOMS;
+          const firstAnimatedLeaf = Math.max(0, leaves.length - animatedLeaves);
+          leaves.forEach((leaf, index) => {
+            const animated = index >= firstAnimatedLeaf;
+            drawLeaf(crown, leaf, index, animated, (index - firstAnimatedLeaf) * 0.05, index === leaves.length - 1);
+          });
+
+          const firstAnimatedBlossom = Math.max(0, blossoms.length - animatedBlossoms);
+          blossoms.forEach((item, index) => {
+            const animated = index >= firstAnimatedBlossom;
+            drawBlossom(crown, item, animated, (index - firstAnimatedBlossom) * 0.12);
+          });
+
+          // Luciérnagas entre las ramas
+          const fireflies = seededRandom(231103);
+          const crownBottom = GROUND_Y - profile.trunkHeight * 0.5;
+          const fireflyCount = lite ? 5 : 9;
+          for (let index = 0; index < fireflyCount; index += 1) {
+            const fx = minX + fireflies() * Math.max(60, maxX - minX);
+            const fy = minY + 10 + fireflies() * Math.max(60, crownBottom - minY - 10);
+            svgNode("circle", {
+              cx: fx.toFixed(1),
+              cy: fy.toFixed(1),
+              r: (2.4 + fireflies() * 1.8).toFixed(2),
+              fill: "#ffd98a",
+              filter: "url(#treeGlow)",
+              class: "firefly",
+              style: `animation-delay:${(index * 0.8).toFixed(2)}s`
+            }, tree);
+          }
+
+          // Montículo de tierra y hierba delante del tronco
+          const base = svgNode("g", null, svg);
+          svgNode("ellipse", {
+            cx: CENTER_X,
+            cy: GROUND_Y + 12,
+            rx: profile.trunkWidth * 2.3 + 16,
+            ry: 15,
+            fill: "#9dbb99",
+            opacity: "0.9",
+            filter: "url(#treeGlow)"
+          }, base);
+          drawGrass(base, CENTER_X - profile.trunkWidth * 1.6, GROUND_Y + 10, 1, "#6d9c72");
+          drawGrass(base, CENTER_X + profile.trunkWidth * 1.5, GROUND_Y + 12, 0.85, "#5f8f66");
+          drawGrass(base, CENTER_X - profile.trunkWidth * 0.4, GROUND_Y + 16, 0.7, "#7cab80");
+          drawGrass(base, CENTER_X + profile.trunkWidth * 0.6, GROUND_Y + 8, 0.6, "#6d9c72");
+        };
+
+        const numberFormat = new Intl.NumberFormat("es-ES");
+        let renderedDays = -1;
+
+        // En celular y tablet animamos menos piezas para que todo fluya suave
+        const liteMotion = () =>
+          typeof window.matchMedia === "function" &&
+          (window.matchMedia("(max-width: 1023px)").matches ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+        // Tiempo restante para que brote la hoja del día siguiente
+        const nextSprout = () => {
+          const now = new Date();
+          const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          const remaining = Math.max(0, nextMidnight - now);
+          const hours = Math.floor(remaining / 3600000);
+          const minutes = Math.floor((remaining % 3600000) / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+        };
+
+        const setText = (id, value) => {
+          const node = document.getElementById(id);
+          if (node) node.textContent = value;
+        };
+
+        const plural = (value, singular, multiple) => `${value} ${value === 1 ? singular : multiple}`;
+
+        // Contadores: días, semanas, meses y años que llevamos juntos
+        const updateCounters = () => {
+          const now = new Date();
+          const days = daysTogether(now);
+          const breakdown = calendarBreakdown(now);
+          const leaves = Math.min(days + 1, MAX_LEAVES);
+          const blossoms = Math.min(Math.floor(days / 7) + 1, MAX_BLOSSOMS);
+
+          // Cuando cambia el día, el árbol crece solo
+          if (days !== renderedDays) {
+            buildTree(days);
+            renderedDays = days;
+          }
+
+          setText("daysCount", numberFormat.format(days));
+          setText("weeksCount", numberFormat.format(Math.floor(days / 7)));
+          setText("monthsCount", numberFormat.format(breakdown.years * 12 + breakdown.months));
+          setText("yearsCount", numberFormat.format(breakdown.years));
+          setText("stageLabel", growthStage(days));
+          setText(
+            "calendarText",
+            `Llevamos ${plural(breakdown.years, "año", "años")}, ${plural(breakdown.months, "mes", "meses")} y ${plural(breakdown.days, "día", "días")} juntos desde el 23 de febrero de 2023. El árbol tiene ${plural(leaves, "hoja", "hojas")} y ${plural(blossoms, "flor", "flores")}.`
+          );
+        };
+
+        // Cuenta atrás hasta la hoja del día siguiente
+        const updateCountdown = () => setText("nextSprout", nextSprout());
+
+        const startReadout = () => {
+          updateCounters();
+          updateCountdown();
+          window.setInterval(updateCountdown, 1000);
+          window.setInterval(updateCounters, 60000);
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", startReadout);
+        } else {
+          startReadout();
+        }
+      })();
+    </script>
+  </body>
+</html>

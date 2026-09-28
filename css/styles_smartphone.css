@@ -50,12 +50,12 @@ body {
 }
 
 .nav {
-  gap: 10px;
+  gap: 8px;
 }
 
 .nav a {
-  padding: 9px 12px;
-  font-size: 0.75rem;
+  padding: 8px 12px;
+  font-size: 0.72rem;
 }
 
 .portal-content {

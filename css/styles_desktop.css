@@ -134,6 +134,34 @@ img {
   box-shadow: 0 12px 22px rgba(140, 15, 85, 0.2);
 }
 
+/* El enlace al árbol del tiempo se distingue del resto del menú */
+.nav a.nav-tree {
+  background: linear-gradient(135deg, #c9924a, var(--rose-deep));
+  box-shadow: 0 8px 18px rgba(140, 15, 85, 0.26);
+}
+
+.nav a.nav-tree:hover {
+  box-shadow: 0 12px 24px rgba(140, 15, 85, 0.3);
+}
+
+/* Página en la que estamos: contorno suave en lugar del relleno */
+.nav a[aria-current="page"] {
+  background: var(--paper);
+  color: var(--rose-deep);
+  border-color: rgba(140, 15, 85, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.nav a[aria-current="page"]:hover {
+  transform: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+/* En la portada el menú encabeza la página */
+.hero .nav {
+  margin: 0 0 26px;
+}
+
 .portal-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(240px, 1fr));
@@ -328,4 +356,6 @@ img {
   .photo-grid {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
+
+  
 }
